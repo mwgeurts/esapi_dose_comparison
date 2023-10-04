@@ -23,16 +23,28 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="10"/>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="10"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="10"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="10"/>
+            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
         <Label Grid.Column="0" Grid.Row="0" Content="Reference Plan"></Label>
-        <ComboBox Grid.Column="1" Grid.Row="0" Name="reference" SelectionChanged="SetDTA"></ComboBox>
+        <ComboBox Grid.Column="1" Grid.Row="0" Name="uiReferenceList" SelectionChanged="SetDTA"></ComboBox>
         <Label Grid.Column="0" Grid.Row="2" Content="Target Plan"></Label>
-        <ComboBox Grid.Column="1" Grid.Row="2" Name="target"></ComboBox>
-        <Label Grid.Column="0" Grid.Row="4" Content="Gamma Percent"></Label>
-        <TextBox Grid.Column="1" Grid.Row="4" Name="percent" IsReadOnly="False">1</TextBox>
+        <ComboBox Grid.Column="1" Grid.Row="2" Name="uiTargetList" SelectionChanged="ClearResults"></ComboBox>
+        <Label Grid.Column="0" Grid.Row="4" Content="Gamma Percent (Local)"></Label>
+        <TextBox Grid.Column="1" Grid.Row="4" Name="uiPercent" IsReadOnly="False" LostKeyboardFocus="ValidatePercent">1.0%</TextBox>
         <Label Grid.Column="0" Grid.Row="6" Content="Gamma DTA"></Label>
-        <TextBox Grid.Column="1" Grid.Row="6" Name="dta" IsReadOnly="True"></TextBox>
-        <Label Grid.Column="0" Grid.Row="8" Content="Note: calculation takes several minutes"></Label>
-        <Button Grid.Column="1" Grid.Row="8" Content="Compare Plans" Click="ComparePlans"></Button>
+        <TextBox Grid.Column="1" Grid.Row="6" Name="uiDTA" IsReadOnly="True"></TextBox>
+        <Label Grid.Column="0" Grid.Row="8" Content="Gamma Threshold"></Label>
+        <TextBox Grid.Column="1" Grid.Row="8" Name="uiThreshold" IsReadOnly="False" LostKeyboardFocus="ValidateThreshold">0.1 Gy</TextBox>
+        <Label Grid.Column="0" Grid.Row="10" Content="Note: calculation takes several minutes"></Label>
+        <Button Grid.Column="1" Grid.Row="10" Content="Compare Plans" Click="ComparePlans"></Button>
+        <Label Grid.Column="0" Grid.Row="12" Content="Gamma Pass Rate"></Label>
+        <TextBox Grid.Column="1" Grid.Row="12" Name="uiPassRate" IsReadOnly="True"></TextBox>
+        <Label Grid.Column="0" Grid.Row="14" Content="Maximum Dose Difference"></Label>
+        <TextBox Grid.Column="1" Grid.Row="14" Name="uiMaxDiff" IsReadOnly="True"></TextBox>
     </Grid>
 </UserControl>
