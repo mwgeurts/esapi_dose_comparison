@@ -16,11 +16,13 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using System.Windows.Threading;
 using VMS.TPS.Common.Model.API;
 using VMS.TPS.Common.Model.Types;
 
 namespace DoseComparison
 {
+
     /// <summary>
     /// Interaction logic for PlanMenu.xaml
     /// </summary>
