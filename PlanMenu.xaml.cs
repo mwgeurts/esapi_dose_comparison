@@ -4,6 +4,7 @@ using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using VMS.TPS;
 using VMS.TPS.Common.Model.API;
 using VMS.TPS.Common.Model.Types;
 
@@ -156,126 +157,12 @@ namespace DoseComparison
             double gammaDTA = Double.Parse(Regex.Match(uiDTA.Text, @"\d+\.*\d*").Value);
             double threshold = Double.Parse(Regex.Match(uiThreshold.Text, @"\d+\.*\d*").Value);
 
-            // Initialize the results statistics that will be used/displayed at the end of this computation
-            double maxDiff = 0;
-            double maxRef = 0;
-            int gammaPass = 0;
-            int gammaFail = 0;
+            // Call CalculateGamma with these inputs
+            double[] results = Script.CalculateGamma(selectedReference.Dose, selectedTarget.Dose, gammaFrac, gammaDTA, threshold);
 
-            // Calculate the scale and offset values (stored in the first two dose values). This is needed because the GetVoxels()
-            // method employed below returns integer dose values, which must be converted back to dose by the scale/offset. It is 
-            // computationally faster to store these and apply the scaling/offset manually rather than call VoxelToDoseValue() on 
-            // every single voxel in both plans.
-            double tscale = selectedTarget.Dose.VoxelToDoseValue(1).Dose - selectedTarget.Dose.VoxelToDoseValue(0).Dose;
-            double toffset = selectedTarget.Dose.VoxelToDoseValue(0).Dose / tscale;
-            double rscale = selectedReference.Dose.VoxelToDoseValue(1).Dose - selectedReference.Dose.VoxelToDoseValue(0).Dose;
-            double roffset = selectedReference.Dose.VoxelToDoseValue(0).Dose / rscale;
-
-            // Initialize temporary variables that will be used during the for loops
-            double refval = 0;
-            double diff = 0;
-
-            // Initialize 2D arrays that will be reused during the for loops. Note there are three 2D planes that will be retrieved
-            // From the target dose volume each iteration; this is to allow the gamma calculation to be 3-dimensional. This is also 
-            // why DTA must be restricted.
-            int[,] rarray = new int[selectedReference.Dose.XSize, selectedReference.Dose.YSize];
-            int[,] t0array = new int[selectedTarget.Dose.XSize, selectedTarget.Dose.YSize];
-            int[,] t1array = new int[selectedTarget.Dose.XSize, selectedTarget.Dose.YSize];
-            int[,] t2array = new int[selectedTarget.Dose.XSize, selectedTarget.Dose.YSize];
-
-            // Loop through each planar dose in the Z dimension. Note, these for loops exclude the edges (starting at 1, ending at
-            // size-1), as each neighboring plane is included in the DTA search. This assumes that the edge voxels are all below 
-            // The threshold dose, otherwise the accuracy may be impacted. That said, it would be relatively straightforward to add 
-            // the additional bounds checks to the if statements below. 
-            for (int z = 1; z < selectedReference.Dose.ZSize - 1; z++)
-            {
-                // Retrieve the current reference dose plane index
-                selectedReference.Dose.GetVoxels(z, rarray);
-
-                // If the entire dose plane is less than the dose threshold, skip ahead now and save some computation time
-                if (rscale * rarray.Cast<int>().Max() + roffset < threshold)
-                    continue;
-
-                // Retrieve the previous, current, and next adjacent target dose planes
-                selectedTarget.Dose.GetVoxels(z - 1, t0array);
-                selectedTarget.Dose.GetVoxels(z, t1array);
-                selectedTarget.Dose.GetVoxels(z + 1, t2array);
-
-                // Loop through each voxel of the 2D plane. See above note about excluding the edge values.
-                for (int y = 1; y < selectedReference.Dose.YSize - 1; y++)
-                {
-                    for (int x = 1; x < selectedReference.Dose.XSize - 1; x++)
-                    {
-                        // Store reference dose value (it will be used multiple times)
-                        refval = rscale * (double)rarray[x, y] + roffset;
-
-                        // If this reference dose is below threshold, exclude from statistics
-                        if (refval < threshold)
-                            continue;
-
-                        // Calculate absolute dose difference
-                        diff = Math.Abs(tscale * (double)t1array[x, y] + toffset - refval);
-
-                        // Keep track of maximum statistics
-                        if (diff > maxDiff)
-                            maxDiff = diff;
-                        if (refval > maxRef)
-                            maxRef = refval;
-
-                        // If the difference is less than the Gamma absolute criterion, this voxel passes and no DTA
-                        // searching is needed. Note, this assumes (a) the dose volumes are perfectly alinged and (b) a
-                        // local gamma is being calculated.
-                        if (diff / refval <= gammaFrac)
-                            gammaPass++;
-
-                        // If not, search around by calculating Gamma at midpoint to each adjacent voxel. The following 
-                        // else if statements calculate the interpolated dose a half voxel away in each of the three
-                        // dimensions and check if the gamma function is 1 or less. This approach is a fairly low
-                        // resolution version of more robust gamma tools but is necessary given the limited processing 
-                        // power of the Citrix environment. See the GitHub repository for details on validation.
-                        else if (Math.Sqrt(Math.Pow(tscale * ((double)t1array[x, y] + (double)t1array[x - 1, y]) / 2
-                                + toffset - refval, 2) / Math.Pow(refval * gammaFrac, 2) 
-                                + Math.Pow(0.5 * selectedReference.Dose.XRes / gammaDTA, 2)) <= 1)
-                            gammaPass++;
-                        else if (Math.Sqrt(Math.Pow(tscale * ((double)t1array[x, y] + (double)t1array[x + 1, y]) / 2
-                                + toffset - refval, 2) / Math.Pow(refval * gammaFrac, 2) 
-                                + Math.Pow(0.5 * selectedReference.Dose.XRes / gammaDTA, 2)) <= 1)
-                            gammaPass++;
-                        else if (Math.Sqrt(Math.Pow(tscale * ((double)t1array[x, y] + (double)t1array[x, y - 1]) / 2
-                                + toffset - refval, 2) / Math.Pow(refval * gammaFrac, 2) 
-                                + Math.Pow(0.5 * selectedReference.Dose.YRes / gammaDTA, 2)) <= 1)
-                            gammaPass++;
-                        else if (Math.Sqrt(Math.Pow(tscale * ((double)t1array[x, y] + (double)t1array[x, y + 1]) / 2
-                                + toffset - refval, 2) / Math.Pow(refval * gammaFrac, 2) 
-                                + Math.Pow(0.5 * selectedReference.Dose.ZRes / gammaDTA, 2)) <= 1)
-                            gammaPass++;
-                        else if (Math.Sqrt(Math.Pow(tscale * ((double)t1array[x, y] + (double)t0array[x, y]) / 2
-                                + toffset - refval, 2) / Math.Pow(refval * gammaFrac, 2)
-                                + Math.Pow(0.5 * selectedReference.Dose.ZRes / gammaDTA, 2)) <= 1)
-                            gammaPass++;
-                        else if (Math.Sqrt(Math.Pow(tscale * ((double)t1array[x, y] + (double)t2array[x, y]) / 2
-                                + toffset - refval, 2) / Math.Pow(refval * gammaFrac, 2)
-                                + Math.Pow(0.5 * selectedReference.Dose.ZRes / gammaDTA, 2)) <= 1)
-                            gammaPass++;
-                        else
-                            gammaFail++;
-                    }
-                }
-            }
-
-            // To expedite calculation, this tool does not calculate the actual gamma minima for each voxel but only 
-            // tallies whether it passes or fails. The pass rate is the number of voxels greater than the threshold
-            // that passed divided by the total voxels (pass + fail) that were also greater than the threshold. The 
-            // result is stored back on the UI as a percentage, rounded to one decimal.
-            double gammaRate = Math.Round((double)gammaPass / ((double)gammaPass + (double)gammaFail) * 1000) / 10;
-            uiPassRate.Text = gammaRate.ToString() + "%";
-
-            // The maximum absolute difference is also tracked during comparison is displayed to the UI as both an
-            // absolute dose and percentage of the maximum reference dose.
-            double percentDiff = Math.Round(maxDiff / maxRef * 1000) / 10;
-            maxDiff = Math.Round(maxDiff * 10) / 10;
-            uiMaxDiff.Text = maxDiff.ToString() + " Gy (" + percentDiff + "%)";
-
+            // Update the UI with the results
+            uiPassRate.Text = results[0].ToString() + "%";
+            uiMaxDiff.Text = results[1].ToString() + " Gy (" + results[2].ToString() + "%)";
 
             // Display a message box to the user indicating that calculations have completed
             MessageBox.Show("Calcuations completed");
