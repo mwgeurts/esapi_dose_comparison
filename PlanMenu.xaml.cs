@@ -152,13 +152,13 @@ namespace DoseComparison
                 return;
             }
 
-            // Retrieve the gamma parameters from the UI. Note, the Gamma percentage is stored as a fraction
-            double gammaFrac = Double.Parse(Regex.Match(uiPercent.Text, @"\d+\.*\d*").Value) / 100;
-            double gammaDTA = Double.Parse(Regex.Match(uiDTA.Text, @"\d+\.*\d*").Value);
+            // Retrieve the gamma parameters from the UI
+            double percent = Double.Parse(Regex.Match(uiPercent.Text, @"\d+\.*\d*").Value);
+            double dta = Double.Parse(Regex.Match(uiDTA.Text, @"\d+\.*\d*").Value);
             double threshold = Double.Parse(Regex.Match(uiThreshold.Text, @"\d+\.*\d*").Value);
 
             // Call CalculateGamma with these inputs
-            double[] results = Script.CalculateGamma(selectedReference.Dose, selectedTarget.Dose, gammaFrac, gammaDTA, threshold);
+            double[] results = Script.CalculateGamma(selectedReference.Dose, selectedTarget.Dose, percent, dta, threshold);
 
             // Update the UI with the results
             uiPassRate.Text = results[0].ToString() + "%";
