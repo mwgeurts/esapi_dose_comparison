@@ -5,7 +5,7 @@ by Mark Geurts <mark.w.geurts@gmail.com>
 
 ## Description
 
-`DoseComparison.easpi.dll` is a standalone ESAPI plugin that allows users to quantify the difference between two dose calculations of the same plan using a local gamma evaluation. This can be useful when performing Treatment Planning System (TPS) QA following a software update or beam model change. This type of evaluation is recommended as part of the period TPS QA in AAPM MPPG 5: 
+`DoseComparison.easpi.dll` is a standalone ESAPI plugin that allows users to quantify the difference between two dose calculations of the same plan using a local gamma evaluation. This can be useful when performing Treatment Planning System (TPS) QA following a software update or beam model change, where you copy a test plan, re-calculate, and compare to the original to quantify the difference. This type of evaluation is recommended as part of the periodic TPS QA in AAPM MPPG 5: 
 
 Geurts MW, Jacqmin DJ, Jones LE, Kry SF, Mihailidis DN, Ohrt JD, Ritter T, Smilowitz JB, Wingreen NE. [AAPM MEDICAL PHYSICS PRACTICE GUIDELINE 5.b: Commissioning and QA of treatment planning dose calculations-Megavoltage photon and electron beams](https://doi.org/10.1002/acm2.13641). J Appl Clin Med Phys. 2022 Sep;23(9):e13641. doi: 10.1002/acm2.13641. Epub 2022 Aug 10. PMID: 35950259; PMCID: PMC9512346.
 
